@@ -153,14 +153,19 @@ data BlockEvents
 type ChainBlockEvents
   =  [BlockEvents]
 
-mapChainToBlockObservationCDF ::
+mapChainToPeerBlockObservationCDF ::
      (BlockObservation -> Maybe UTCTime)
   -> ChainBlockEvents
   -> [PercSpec Float]
-  -> Distribution Float NominalDiffTime
-mapChainToBlockObservationCDF proj cbe percs =
-  undefined
+  -> (Distribution Float NominalDiffTime, Distribution Float NominalDiffTime)
+mapChainToPeerBlockObservationCDF proj cbe percs =
+  (means, covs)
  where
+   means, covs :: Distribution Float NominalDiffTime
+   (,) means covs = computeDistributionStats (fmap realToFrac . snd <$> allDistributions)
+                    & either error id
+                    & join (***) (fmap realToFrac)
+
    allDistributions :: [(BlockEvents, Distribution Float NominalDiffTime)]
    allDistributions = fmap (fmap $ computeDistribution percs) allObservations
 
